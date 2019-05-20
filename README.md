@@ -1,13 +1,17 @@
 # Reco Facial
 
-compilation du projet
-``
+## compilation du projet
+```compile
 make
+```
 
 ou
-``
-g++ -g -Wall -o main main.cpp `pkg-config opencv --cflags --libs`
 
-executer
-``
+```compile
+g++ -g -Wall -o main main.cpp `pkg-config opencv --cflags --libs`
+```
+
+## executer
+```exec
 ./main
+```
