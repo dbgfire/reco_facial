@@ -1,63 +1,136 @@
+#include <iostream>
+#ifdef WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif // win32
+#include <time.h>
 #include <opencv2/opencv.hpp>
+#include <fstream>
+#include <string>
+#include <ctime>
+//g++ -o main main-face-recog.cpp pkg-config --cflags --libs opencv
+#define BLACK CV_RGB(0,0,0)
 
-using namespace std;
-int main(){
+#include <opencv2/opencv.hpp>
+void sleepcp(int milliseconds) // cross-platform sleep function
+{
+#ifdef WIN32
+    Sleep(milliseconds);
+#else
+    usleep(milliseconds * 1000);
+#endif // win32
+}
 
-    try{
-        cv::VideoCapture videoOpenCv;
-        bool test = videoOpenCv.open(0);
-        if(test==false)
-        {
-            throw -101;
-        }
-        char folder[5]="img/";  
-        char folderCreateCommand[20];
+std::string datetime()
+{
+    time_t rawtime;
+    struct tm * timeinfo;
+    char buffer[80];
+
+    time (&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    strftime(buffer,80,"%d-%m-%Y %H-%M-%S",timeinfo);
+    return std::string(buffer);
+}
+
+int calculationFPS(time_t *start, int count)
+{
+    int ret = count;
+    if(count==100)
+    {
+        double seconds = 1;
+        double fps = 0;
+        time_t end;
+
+        time(&end);
+        seconds = difftime(end,*start);
+        fps = count/seconds;
+        std::cout << "\033[031;1mFrames per seconds : " << fps << "\033[0m" << std::endl;
+        sleepcp(300);
+
+        time(start);
+
+        ret = 0;
+    }
+    return ret;
+}
+
+int main()
+{
         try
         {
-            sprintf(folderCreateCommand,  "mkdir %s", folder);
-            system(folderCreateCommand);
-        }
-        catch(const std::exception& e)
-        {
-            std::cerr << e.what() << '\n';
-        }
-        
-       
+            //reconnaissance des visages
 
-        //allocation memoire
-        cv::Mat img;
-        int count=0;
-        //creation fenetre
-        cv::namedWindow("window2",cv::WINDOW_AUTOSIZE);
-        cout << count<< '\n';
-        //lecture d'une image et enregistremet sur le dique dure
-    
-        while (true)
-        {
-            
-            videoOpenCv.read(img);
-            cv::imshow("window2",img);
-            int key = cv::waitKey(1000/25);
-            if(key==(int)'q')
+            cv::VideoCapture videoOpenCv;
+            bool test = videoOpenCv.open(0);
+            int counter=0;
+            if(test==false)
             {
-                break;
+                throw -101;
             }
-            if(key==(int)'c'){
-                count++;
-                char message[100];                
-                sprintf(message, "%stest%d.png", folder,count);
-                cout << message << '\n';
-                videoOpenCv.read(img);  
-                cv::imwrite(message,img);
 
+            cv::CascadeClassifier face_cascade;
+
+            if(!face_cascade.load("/usr/share/opencv/haarcascades/haarcascade_frontalface_alt2.xml"))
+            {
+                throw -103;
+            }
+            cv::Mat img,bwsrc;
+            cv::namedWindow("Window3", cv::WINDOW_AUTOSIZE);
+
+            while(true)
+            {
+              videoOpenCv.read(img);
+
+              std::vector<cv::Rect> faces;
+              std::vector<cv::Scalar> colors;
+              std::vector<std::string> names;
+
+              cv::Size sizeRect(40, 40);
+
+              face_cascade.detectMultiScale(img, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, sizeRect);
+              for( size_t i = 0; i < faces.size(); i++ )
+              {
+                  colors.push_back(BLACK);
+                  names.push_back("Human");
+              }
+
+              for( size_t i = 0; i < faces.size(); i++ )
+              {
+                  CvRect r = faces.at(i);
+                  rectangle (img, cvPoint( r.x, r.y ), cvPoint( r.x + r.width, r.y + r.height ), colors.at(i), 1, 8, 0);
+                  putText(img,names.at(i), cvPoint(r.x + r.width + 10, r.y + r.height + 10), cv::FONT_HERSHEY_PLAIN, 1.0, colors.at(i), 2.0);
+
+              }
+                cv::imshow("Window3", img);
+                int key = cv::waitKey(1000/25);
+                if(key==(int)'q')
+                {
+                    break;
+                }
+                if(key==(int)'a')
+                {
+                  std::string fname;
+                  fname="Photo"+datetime()+".png";
+                  for( size_t i = 0; i < faces.size(); i++ ){
+                    CvRect r = faces.at(i);
+                    cv::Rect myROI(cvPoint( r.x, r.y ), cvPoint( r.x + r.width, r.y + r.height ));
+                    cv::Mat croppedImage = img(myROI);
+                    counter++;
+                    cv::cvtColor(croppedImage, bwsrc, CV_BGR2GRAY);
+                    fname="user/Photo"+std::to_string(counter)+".png";
+                    cv::imwrite(fname,bwsrc);
+                  }
+
+                }
             }
         }
-        
-    }
-    catch(int e)
-    {
-        fprintf(stderr,"there war an error in camera opening\n");
-        return e;
-    }
-    return 0;
+        catch(int e)
+        {
+                return e;
+        }
+
+        return 0;
 }

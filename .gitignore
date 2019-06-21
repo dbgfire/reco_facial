@@ -31,3 +31,6 @@
 *.out
 *.app
 .vscode
+img
+jeu/s4*
+user
