@@ -1,7 +1,7 @@
 CC = g++
 CFLAGS = -g -Wall
-SRCS = main.cpp
-PROG = main
+SRCS = faceRecognition.cpp
+PROG = face
 
 OPENCV = `pkg-config opencv --cflags --libs`
 LIBS = $(OPENCV)

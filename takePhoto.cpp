@@ -9,11 +9,10 @@
 #include <fstream>
 #include <string>
 #include <ctime>
-//g++ -o main main-face-recog.cpp pkg-config --cflags --libs opencv
 #define BLACK CV_RGB(0,0,0)
 
 #include <opencv2/opencv.hpp>
-void sleepcp(int milliseconds) // cross-platform sleep function
+void sleepcp(int milliseconds) 
 {
 #ifdef WIN32
     Sleep(milliseconds);
@@ -110,17 +109,18 @@ int main()
                 {
                     break;
                 }
-                if(key==(int)'a')
+                if(key==(int)'c')
                 {
                   std::string fname;
-                  fname="Photo"+datetime()+".png";
                   for( size_t i = 0; i < faces.size(); i++ ){
                     CvRect r = faces.at(i);
                     cv::Rect myROI(cvPoint( r.x, r.y ), cvPoint( r.x + r.width, r.y + r.height ));
                     cv::Mat croppedImage = img(myROI);
+                    cv::Mat face_resized;
+                    cv::resize(croppedImage, face_resized, cv::Size(92 , 92), 1.0, 1.0, cv::INTER_CUBIC);
                     counter++;
-                    cv::cvtColor(croppedImage, bwsrc, CV_BGR2GRAY);
-                    fname="user/Photo"+std::to_string(counter)+".png";
+                    cv::cvtColor(face_resized, bwsrc, CV_BGR2GRAY);
+                    fname="user/Photo"+std::to_string(counter)+".pgm";
                     cv::imwrite(fname,bwsrc);
                   }
 
